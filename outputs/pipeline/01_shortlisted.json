@@ -1,0 +1,121 @@
+{
+  "step": "01_scoring",
+  "run_at": "2026-05-20T09:49:53.936404",
+  "eligible_count": 14,
+  "ineligible_count": 0,
+  "eligible": [
+    {
+      "creator_id": "28588CF6",
+      "name": "Isabelle Lynn",
+      "tier": "nano",
+      "gymshark_brand_fit": 7.0,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "B33FF4E1",
+      "name": "Naomi | Fitness ",
+      "tier": "nano",
+      "gymshark_brand_fit": 6.8,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "055F0DC8",
+      "name": "Sydney Lerz",
+      "tier": "nano",
+      "gymshark_brand_fit": 6.6,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "CB248BD0",
+      "name": "Jenni Ducklas",
+      "tier": "nano",
+      "gymshark_brand_fit": 6.4,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "10490350",
+      "name": "Kayla Lashae Fit",
+      "tier": "nano",
+      "gymshark_brand_fit": 6.0,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "2FE3269E",
+      "name": "Thuvan Pham",
+      "tier": "nano",
+      "gymshark_brand_fit": 5.9,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "5B3C3710",
+      "name": "Justin Lassiter",
+      "tier": "nano",
+      "gymshark_brand_fit": 5.9,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "637AF227",
+      "name": "Patrice Ariel",
+      "tier": "nano",
+      "gymshark_brand_fit": 5.8,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "90C84C00",
+      "name": "Sophie Reid",
+      "tier": "micro",
+      "gymshark_brand_fit": 5.8,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears micro min 5.5)"
+    },
+    {
+      "creator_id": "FB2DBC28",
+      "name": "Tajera Notch",
+      "tier": "nano",
+      "gymshark_brand_fit": 5.8,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "49C6C6F2",
+      "name": "Sam Short",
+      "tier": "nano",
+      "gymshark_brand_fit": 5.8,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Outreach now (clears nano min 5.0)"
+    },
+    {
+      "creator_id": "9FEAF5A2",
+      "name": "Will Tennyson",
+      "tier": "mega",
+      "gymshark_brand_fit": 5.7,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Do not recommend (needs 7.5 for mega, gap 1.8)"
+    },
+    {
+      "creator_id": "B46F1BA8",
+      "name": "Whitney Simmons",
+      "tier": "mega",
+      "gymshark_brand_fit": 5.7,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Do not recommend (needs 7.5 for mega, gap 1.8)"
+    },
+    {
+      "creator_id": "AD6A69CE",
+      "name": "SpeedUniverse",
+      "tier": "mega",
+      "gymshark_brand_fit": 5.6,
+      "audience_brand_risk": "MEDIUM",
+      "recommendation": "Do not recommend (needs 7.5 for mega, gap 1.9)"
+    }
+  ],
+  "ineligible": []
+}

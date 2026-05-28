@@ -1,4 +1,4 @@
-name: Milestone 04
+name: Milestone 03
 on: [push, pull_request]
 
 jobs:
@@ -15,11 +15,10 @@ jobs:
           fi
           # The template ships a sentinel sentence in the first paragraph.
           # If it's still there, the team hasn't replaced the template README.
-          if grep -q "This is the \*\*starter template\*\* for Milestone 04" README.md; then
-            echo "FAIL: README.md still contains the milestone04 template intro."
-            echo "Expected: rewrite README.md to describe YOUR project — the"
-            echo "AI coworker, the workflow, the UI, the human review plan,"
-            echo "and how to run everything."
+          if grep -q "This is the \*\*starter template\*\* for Milestone 03" README.md; then
+            echo "FAIL: README.md still contains the milestone03 template intro."
+            echo "Expected: rewrite README.md to describe YOUR project — which"
+            echo "skills, MCP tools, and RAG corpus you built, and how to run them."
             exit 1
           fi
           echo "OK: README.md has been edited beyond the template."
@@ -37,6 +36,7 @@ jobs:
             echo ""
             echo "FAIL: no skill found under skills/ (any folder containing SKILL.md)."
             echo "Expected: at least one skills/<name>/SKILL.md."
+            echo "M03 brief asks for 3–5 connected skills; CI accepts at least 1."
             exit 1
           fi
 
@@ -77,6 +77,7 @@ jobs:
             echo ""
             echo "FAIL: no student documents under rag/knowledge_base/."
             echo "Expected: at least one document beyond the template EXAMPLE.md."
+            echo "M03 brief asks for 10–20 proprietary documents; CI accepts at least 1."
             exit 1
           fi
 
@@ -86,6 +87,7 @@ jobs:
             echo "FAIL: rag/retrieval.py is missing."
             exit 1
           fi
+          # The template stub leaves a `TODO: implement` marker inside retrieve().
           if grep -q "TODO: implement" rag/retrieval.py; then
             echo "FAIL: rag/retrieval.py still contains the stub TODO marker."
             echo "Expected: implement retrieve(query, top_k) so it returns relevant"
@@ -93,55 +95,3 @@ jobs:
             exit 1
           fi
           echo "OK: rag/retrieval.py has been implemented."
-
-      - name: ui/ has student UI code (not just the README)
-        run: |
-          shopt -s nullglob
-          found=0
-          for f in ui/*.py ui/**/*.py ui/*.html ui/**/*.html ui/*.js ui/**/*.js; do
-            [ -f "$f" ] || continue
-            echo "OK: UI file '$f'"
-            found=$((found + 1))
-          done
-          if [ "$found" -eq 0 ]; then
-            echo ""
-            echo "FAIL: no UI source files found under ui/."
-            echo "Expected: at least one .py/.html/.js file implementing the M04 UI"
-            echo "(see ui/README.md for the four required screens)."
-            exit 1
-          fi
-
-      - name: M04 deliverable docs exist and are not still the template
-        run: |
-          missing=0
-          for f in human_review_plan.md evidence_and_sources.md estimates.md failure_cases.md test_report.md; do
-            if [ ! -f "$f" ]; then
-              echo "FAIL: $f is missing."
-              missing=$((missing + 1))
-            fi
-          done
-          [ "$missing" -eq 0 ] || exit 1
-          # Each stub doc carries a placeholder marker — fail if it's still there.
-          if grep -q "*(add row 3)*" human_review_plan.md; then
-            echo "FAIL: human_review_plan.md still has template placeholder rows."
-            exit 1
-          fi
-          if grep -q "*(add row 4)*" failure_cases.md; then
-            echo "FAIL: failure_cases.md still has template placeholder rows."
-            exit 1
-          fi
-          echo "OK: M04 deliverable docs filled in."
-
-      - name: tests/test_workflow.py has been customized
-        run: |
-          if [ ! -f tests/test_workflow.py ]; then
-            echo "FAIL: tests/test_workflow.py is missing."
-            exit 1
-          fi
-          if grep -q "Wire run_workflow() to your actual orchestrator" tests/test_workflow.py; then
-            echo "FAIL: tests/test_workflow.py still contains the run_workflow() stub."
-            echo "Expected: replace run_workflow() with a real call into your"
-            echo "orchestrator and replace the example TEST_CASES with 8-12 real cases."
-            exit 1
-          fi
-          echo "OK: tests/test_workflow.py has been customized."

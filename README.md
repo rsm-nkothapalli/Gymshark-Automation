@@ -1,151 +1,125 @@
-# Milestone 04 — Student template
+# Gymshark Influencer Marketing Pipeline — Group 18
 
-This is the **starter template** for Milestone 04 of MGT 449 / MGTA 495. It
-builds on the Milestone 03 template (skills, MCP tools, RAG) and adds the
-pieces specific to M04: a real user interface, an explicit human-review
-plan, evidence/source displays, time/cost/quality reasoning, predicted
-failure cases, and an automated DeepEval test suite.
-
-Your assignment brief is in [`milestone04.qmd`](milestone04.qmd). The six
-graded deliverables are:
-
-1. **Final Process Redesign** — updated workflow diagram + 1–2 page explanation.
-2. **Human Review and Control Plan** — table covering ≥6 process steps.
-3. **User Interface** — at least 4 screens (start, AI work, evidence, review).
-4. **Evidence and Source Use** — how RAG/tool output is shown to the user.
-5. **Time, Cost, and Quality Reasoning** — before/after estimates with assumptions.
-6. **Testing AI Performance** — 5+ predicted failures + 8–12 DeepEval test cases with results.
-
-A final presentation pulls these together on **June 4**. There is also a
-**May 28 checkpoint** for the RAG + current UI.
+An end-to-end AI-assisted influencer marketing pipeline that discovers YouTube fitness creators, scores them for brand fit, checks audience safety, drafts outreach messages, generates product briefs for accepted creators, and evaluates campaign performance.
 
 ---
 
 ## Setup
 
 ```bash
-uv sync                                       # installs deps into .venv (incl. deepeval)
-cp .env.example .env && $EDITOR .env          # add TRITONAI_API_KEY
-bash install.sh                               # registers skills with Claude Code
-                                              #   (run again after you add a skill)
+uv sync                        # install deps into .venv
+cp .env.example .env           # add TRITONAI_API_KEY
 ```
 
-If you also want the MCP example to be invokable from Claude Code:
+Run the full test suite:
 
 ```bash
-uv run mcp dev mcp_servers/example_server.py  # opens the MCP inspector
+uv run pytest
 ```
 
-`uv run pytest` should pass on a fresh clone.
+---
+
+## Workflow overview
+
+| Phase | Step | Skill | Trigger |
+|-------|------|-------|---------|
+| 0 | Data setup | Scripts in `data/` | Once, before pipeline starts |
+| 1 | Creator scoring | Skill 01 | Monthly |
+| 1b | Sentiment & brand risk | Skill 02 | Per shortlisted creator |
+| 2 | Outreach drafting | Skill 03 | Per approved creator |
+| 3 | Product brief | Skill 05 | Creator says yes to outreach |
+| 6 | Campaign analytics | Skill 04 | After campaigns complete |
+
+The full pipeline (Skills 01 → 02 → 03 → 05) is orchestrated by **Skill 06** (`skills/skill-06-pipeline-workflow/pipeline_helpers.py`).
+
+### Run the pipeline interactively
+
+```bash
+uv run python scripts/orchestrator.py --mode interactive
+```
+
+### Run in automated mode (uses simulated outreach responses)
+
+```bash
+uv run python scripts/orchestrator.py --mode automated
+```
+
+---
+
+## Skills
+
+| Skill | Folder | What it does |
+|-------|--------|-------------|
+| 01 — Creator Scoring | `skills/skill-01-creator-scoring/` | Reads `creators.csv`, applies tier GFS thresholds and hard disqualifiers, returns ranked shortlist |
+| 02 — Sentiment & Brand Risk | `skills/skill-02-sentiment-risk/` | VADER sentiment on YouTube comments → LOW / MEDIUM / HIGH / UNKNOWN risk label |
+| 03 — Outreach Drafting | `skills/skill-03-outreach-drafting/` | LLM-drafted personalized outreach messages per creator using tier-appropriate tone |
+| 04 — Campaign Analytics | `skills/skill-04-campaign-analytics/` | ROI, conversion rate, cost-per-click analytics on `campaign_performance.csv` |
+| 05 — Product Brief | `skills/skill-05-product-brief/` | LLM-generated product brief + promo code for creators who accepted outreach |
+| 06 — Pipeline Workflow | `skills/skill-06-pipeline-workflow/` | Orchestrates Skills 01→02→03→05 with four human review gates |
+
+---
+
+## MCP Tools
+
+Two MCP servers are registered in `.mcp.json`:
+
+### gymshark-tools (`mcp_servers/gymshark_mcp_server.py`)
+
+| Tool | What it does |
+|------|-------------|
+| `score_creators` | Score and shortlist all creators from `data/creators.csv` |
+| `check_creator_risk` | Run sentiment risk analysis for a specific `creator_id` |
+| `draft_outreach_message` | Draft a personalized outreach message for an approved creator |
+
+### gymshark-data (`mcp_servers/data_server.py`)
+
+| Resource | URI | What it returns |
+|----------|-----|----------------|
+| All creators | `creators://all` | Full `creators.csv` as JSON |
+| Single creator | `creators://{creator_id}` | One creator's profile |
+| Campaign summary | `campaigns://summary` | Portfolio-level campaign metrics |
+
+---
+
+## RAG
+
+Knowledge base in `rag/knowledge_base/` contains Gymshark brand and partnership documents. Retrieval via `rag/retrieval.py` (`retrieve(query, top_k)`).
+
+---
+
+## Data files
+
+| File | Description |
+|------|-------------|
+| `data/creators.csv` | 8 YouTube fitness prospects — scores, tiers, brand safety flags |
+| `data/comment_sentiment.csv` | VADER-scored YouTube comments per creator |
+| `data/crm_records.csv` | CRM prospect pipeline records |
+| `data/existing_partners.csv` | 9 existing Gymshark partners |
+| `data/campaign_performance.csv` | Synthetic campaign results for existing partners |
+| `data/outreach_responses.csv` | Simulated yes/no creator responses to outreach |
+
+---
+
+## Tests
+
+```bash
+uv run pytest                        # all tests
+uv run pytest tests/skills/          # skill tests only
+uv run pytest -k pipeline            # pipeline orchestration tests
+```
+
+Total: **50+ tests** across all skills and pipeline helpers.
 
 ---
 
 ## Folder map
 
-| Folder | What lives here |
-| --- | --- |
-| [`skills/`](skills/README.md) | LLM-based skills (one folder per skill; each has `SKILL.md` + `scripts/`) |
-| [`automations/`](automations/README.md) | Deterministic Python steps (no LLM); same CLI contract as skills |
-| [`mcp_servers/`](mcp_servers/README.md) | MCP servers that expose your skills + data as tools |
-| [`rag/`](rag/README.md) | Proprietary knowledge base + retrieval code |
-| [`ui/`](ui/README.md) | User interface for the workflow (≥4 screens) — **new in M04** |
-| [`scripts/`](scripts/README.md) | Orchestrator + glue scripts |
-| [`utils/`](utils/README.md) | Shared helpers (`connect.py` for LLM calls is already here) |
-| [`data/`](data/README.md) | `raw/`, `processed/`, `working/`, `dictionaries/` data folders |
-| [`tests/`](tests/README.md) | pytest + **DeepEval** test cases for AI performance — extended in M04 |
-| [`presentation_slides/`](presentation_slides/README.md) | Final presentation materials — **new in M04** |
-
-Top-level deliverable documents (fill these in):
-
-- [`human_review_plan.md`](human_review_plan.md) — table of human review/control points
-- [`evidence_and_sources.md`](evidence_and_sources.md) — how data/documents/tools are shown
-- [`estimates.md`](estimates.md) — time, cost, and quality assumptions
-- [`failure_cases.md`](failure_cases.md) — predicted failures and process handling
-- [`test_report.md`](test_report.md) — DeepEval results, failure patterns, before/after
-
-Add your workflow diagram as `ai_process_design.pdf` at the repo root.
-
-Top-level files you should not need to edit:
-
-- `install.sh` — auto-discovers every `skills/*/SKILL.md` and symlinks it into `.claude/skills/`
-- `conftest.py` — loads `.env` before pytest collects
-- `.env.example` — copy to `.env` and add your key
-- `pyproject.toml` — uv-managed dependencies; add to it with `uv add <pkg>`
-- `.mcp.json` — registers your MCP servers with Claude Code
-
----
-
-## What's new in M04 (vs M03)
-
-M03 gave you a working orchestrator with skills, MCP tools, and RAG. M04
-asks: *if a real person used this every day, what would the interaction
-look like, and how would you know it was working?* That breaks into four
-new pieces of work:
-
-### 1. A real UI (`ui/`)
-
-The orchestrator's CLI is not enough. Build at least four screens:
-
-1. **Start screen** (carried from M03, refined) — operator selects/enters the case.
-2. **AI work screen** (carried from M03, refined) — operator watches the AI produce output.
-3. **Evidence screen** (new) — structured display of retrieved docs, tool output, data rows.
-4. **Review screen** (new) — approve / edit / reject / rerun / escalate, with each action wired to a real outcome.
-
-See [`ui/README.md`](ui/README.md) for tool suggestions and the screen contract.
-
-### 2. Human review plan (`human_review_plan.md`)
-
-A table that names ≥6 workflow steps, what the AI does, what the human
-does, whether approval is required, what could go wrong, and what happens
-when it does. At least 1–2 rows must be explicit review/approval points.
-
-### 3. Evidence and source use (`evidence_and_sources.md`)
-
-A short doc explaining what data/documents/tools the AI uses, how the user
-sees the evidence, and what happens when evidence is missing or weak.
-
-### 4. Time, cost, and quality estimates (`estimates.md`)
-
-Two tables: a per-step before/after time table (≥5 rows) and a summary
-table. Use **reasoned assumptions and ranges** — not invented company data.
-
-### 5. Failure cases + DeepEval tests (`failure_cases.md`, `tests/`, `test_report.md`)
-
-- List **≥5 realistic failure cases** with consequence and handling.
-- Build a **DeepEval test set of 8–12 cases**, run it, and write up the
-  results, the 3 most common failure patterns, and one before/after fix.
-
-See [`tests/README.md`](tests/README.md) for the DeepEval starter and
-[`tests/test_workflow.py`](tests/test_workflow.py) for a runnable example.
-
----
-
-## Timeline
-
-- **May 28 (checkpoint):** RAG + current UI demo. Two teams selected to share.
-- **June 4 (final):** All deliverables + final presentation. Push to GitHub before class.
-
----
-
-## Before you submit
-
-- [ ] Workflow diagram + 1–2 page explanation in `ai_process_design.pdf`.
-- [ ] `human_review_plan.md` covers ≥6 steps with ≥1–2 review points.
-- [ ] `ui/` has at least 4 working screens.
-- [ ] `evidence_and_sources.md` answers all 5 questions in the brief.
-- [ ] `estimates.md` has the per-step table (≥5 rows) and the summary table.
-- [ ] `failure_cases.md` lists ≥5 realistic failures.
-- [ ] `tests/test_workflow.py` runs 8–12 DeepEval cases and writes results to `tests/results/`.
-- [ ] `test_report.md` summarizes results, top-3 failure patterns, and one before/after fix.
-- [ ] `uv run pytest` is green.
-- [ ] `presentation_slides/` contains the final deck.
-
----
-
-## Reading the reference repo
-
-The `customer-ticket-process/` reference repo your instructor shared is
-still the worked example for skills, MCP, RAG, and the orchestrator. M04
-adds new pieces (UI, review plan, estimates, DeepEval) that are
-project-specific — there is no reference to copy from. Start small,
-make it work, then make it better.
+| Folder | Contents |
+|--------|---------|
+| `skills/` | One subfolder per skill — `SKILL.md` + `*_helpers.py` |
+| `mcp_servers/` | Two FastMCP servers (tools + data resources) |
+| `rag/` | Knowledge base documents + `retrieval.py` |
+| `scripts/` | `orchestrator.py` entry point |
+| `utils/` | `connect.py` — shared LLM client (`ask`, `ask_json`) |
+| `data/` | CSV data files + generation scripts |
+| `tests/` | pytest suite mirroring source layout |

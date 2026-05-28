@@ -1,8 +1,12 @@
 {
   "mcpServers": {
-    "milestone04-example": {
+    "gymshark-tools": {
       "command": "uv",
-      "args": ["run", "python", "-m", "mcp_servers.example_server"]
+      "args": ["run", "python", "mcp_servers/gymshark_mcp_server.py"]
+    },
+    "gymshark-data": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/data_server.py"]
     }
   }
 }

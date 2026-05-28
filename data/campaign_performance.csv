@@ -1,0 +1,19 @@
+campaign_id,creator_id,creator_name,tier,deal_type,platform,campaign_start,campaign_end,status,promo_code,budget_gbp,reach,impressions,total_engagements,utm_clicks,promo_redemptions,revenue_attributed_gbp,roi_x,avg_order_value_gbp,renewal_recommended
+AE146D56,EP001,Whitney Simmons,mega,brand_ambassador,YouTube,2025-11-30,2026-05-14,live,GSWHIT14,74608.98,455135,697500,91758,15949,9579,386844.82,5.18,40.38,Yes
+8FEFF7B6,EP001,Whitney Simmons,mega,brand_ambassador,YouTube,2025-09-23,2026-02-17,paused,GSWHIT45,57247.07,301508,537959,98558,7897,3914,377459.55,6.59,96.44,Yes
+7E46BDDD,EP002,David Laid,mega,brand_ambassador,YouTube,2025-07-25,2025-11-05,completed,GSDAVI58,77860.65,705466,1064159,118781,39799,10655,204417.82,2.63,19.19,Yes
+EBC11DBB,EP002,David Laid,mega,brand_ambassador,YouTube,2025-07-04,2025-10-12,paused,GSDAVI47,78655.79,451027,1173456,112185,27657,9447,337679.83,4.29,35.74,Yes
+66913DAA,EP003,Natacha Oceane,macro,brand_ambassador,YouTube,2025-08-18,2025-11-26,completed,GSNATA22,17241.66,377257,869228,90787,19232,10974,66415.41,3.85,6.05,Yes
+51741841,EP003,Natacha Oceane,macro,brand_ambassador,YouTube,2025-12-08,2026-05-24,completed,GSNATA78,28141.87,292343,610831,90109,9448,6462,153824.52,5.47,23.8,Yes
+36CBE6D1,EP004,Krissy Cela,macro,brand_ambassador,YouTube,2025-12-16,2026-04-14,completed,GSKRIS50,27746.13,278681,477219,69492,19376,7747,137972.96,4.97,17.81,Yes
+1FD96510,EP004,Krissy Cela,macro,brand_ambassador,YouTube,2025-05-24,2025-09-09,completed,GSKRIS27,23482.32,230471,365537,81036,11644,6766,89767.72,3.82,13.27,Yes
+7D388214,EP005,Simeon Panda,mega,paid_creative_partnership,YouTube,2025-07-13,2025-08-27,completed,GSSIME16,24958.14,1088661,2004839,159958,71200,17408,70704.91,2.83,4.06,Yes
+240EE1DD,EP006,Steve Cook,mega,paid_creative_partnership,YouTube,2025-11-22,2025-12-06,completed,GSSTEV97,15956.85,415645,709911,96454,21546,6555,123424.38,7.73,18.83,Yes
+41FFABF7,EP006,Steve Cook,mega,paid_creative_partnership,YouTube,2025-11-16,2025-12-11,paused,GSSTEV23,8055.17,646208,1600102,98873,26047,9307,62142.09,7.71,6.68,Yes
+3C48A02D,EP007,Lex Griffin,mid,paid_creative_partnership,YouTube,2025-07-02,2025-07-16,paused,GSLEXG51,6671.76,64611,150584,25590,2059,2277,32496.4,4.87,14.27,Yes
+26C8BBEA,EP007,Lex Griffin,mid,paid_creative_partnership,YouTube,2025-06-13,2025-07-02,completed,GSLEXG72,3445.23,72997,120111,23761,5061,2637,21099.19,6.12,8.0,Yes
+77AD1E75,EP008,Tom Gregrow,micro,affiliate,YouTube,2025-06-17,2025-08-24,live,GSTOMG37,996.3,38282,83933,8224,2093,2235,8302.54,8.33,3.71,Yes
+D22EF32E,EP008,Tom Gregrow,micro,affiliate,YouTube,2025-09-04,2025-11-01,paused,GSTOMG67,2212.05,37406,92835,9792,2135,1569,18433.74,8.33,11.75,Yes
+EBB2B10C,EP009,Em Furey,micro,affiliate,YouTube,2025-04-25,2025-05-28,completed,GSEMFU18,770.38,14024,27199,6602,495,513,6419.86,8.33,12.51,Yes
+AAA8C80E,EP010,Jonni Shreve,micro,affiliate,YouTube,2025-05-26,2025-07-31,live,GSJONN41,917.55,28510,45391,5988,1571,1038,7646.24,8.33,7.37,Yes
+99ADF96A,EP010,Jonni Shreve,micro,affiliate,YouTube,2025-07-18,2025-08-20,completed,GSJONN17,1616.59,27454,70000,5895,806,1178,13471.57,8.33,11.44,Yes

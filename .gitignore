@@ -22,6 +22,8 @@ __pycache__
 *.html
 # but DO track the orchestrator's source HTML template (rendered at request time)
 !scripts/orchestrator_ui.html
+# track the frontend UI source
+!frontend/index.html
 
 # Others
 Makefile
@@ -31,7 +33,8 @@ DEPLOY.md
 vnijs-session-*
 
 # files to exclude
-main.py
+# main.py excluded broadly — add explicit exceptions below as needed
+!api/main.py
 justfile
 DEPLOY.md
 config.yaml
@@ -47,3 +50,6 @@ slides/
 config.yaml
 justfile
 DEPLOY.md
+
+# RSM VS Code generated files
+.devcontainer/

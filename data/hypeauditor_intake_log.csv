@@ -1,0 +1,15 @@
+creator_id,ha_subscribers,ha_engagement_rate,ha_audience_quality,ha_fake_followers_pct,ha_fraud_risk_label,ha_audience_male_pct,ha_top_country,ig_followers,ig_engagement_rate,pipeline_action
+28588CF6,7940,15.0,average,8.2,medium,26.3,FR,3473,2.2,proceed
+B33FF4E1,5290,15.0,excellent,2.6,low,62.0,US,3029,3.3,proceed
+055F0DC8,1040,15.0,excellent,1.8,low,35.9,GB,574,1.6,proceed
+CB248BD0,2720,15.0,average,9.0,medium,60.1,CA,1386,2.8,proceed
+10490350,10600,15.0,average,10.0,high,25.3,CA,7450,3.6,flag
+2FE3269E,27000,15.0,good,4.4,low,35.8,AU,18407,1.8,proceed
+5B3C3710,4320,15.0,excellent,2.5,low,67.4,FR,2600,3.9,proceed
+637AF227,2360,15.0,good,6.3,medium,31.2,CA,1796,1.7,proceed
+90C84C00,114000,15.0,average,10.2,high,55.9,FR,83317,3.2,flag
+FB2DBC28,2540,15.0,excellent,2.2,low,58.1,GB,1743,4.5,proceed
+49C6C6F2,3220,15.0,average,10.6,high,44.0,GB,1695,4.0,flag
+9FEAF5A2,4820000,15.0,good,5.4,medium,35.5,FR,2089416,4.3,proceed
+B46F1BA8,2330000,15.0,excellent,2.2,low,56.7,AU,1321272,2.2,proceed
+AD6A69CE,3990000,15.0,good,5.5,medium,74.5,FR,2473799,3.2,proceed

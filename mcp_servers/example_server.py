@@ -18,7 +18,7 @@ from mcp.server.fastmcp import FastMCP
 
 
 def build_server() -> FastMCP:
-    server = FastMCP("milestone04-example")
+    server = FastMCP("milestone03-example")
 
     @server.resource("hello://world")
     def hello_resource() -> str:
@@ -30,7 +30,7 @@ def build_server() -> FastMCP:
           - dictionaries://{name}                  (reference enumerations)
           - rag://kb                               (the proprietary KB index)
         """
-        return "Hello from milestone04/mcp_servers/example_server.py — replace me."
+        return "Hello from milestone03/mcp_servers/example_server.py — replace me."
 
     @server.tool()
     def echo(text: str) -> dict:

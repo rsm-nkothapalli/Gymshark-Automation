@@ -1,85 +1,101 @@
-# `mcp_servers/`
+# Gymshark Pipeline — MCP Servers
 
-The **Model Context Protocol** (MCP) is an open standard for letting a
-GenAI model invoke tools, read resources, and call functions through a
-consistent interface. You write a server that publishes a list of tools the
-model can call; the model decides when and how to invoke them.
+Two FastMCP servers expose the pipeline's Python functions and data files to
+Claude Code (or any MCP-compatible client).
 
-Your job in this folder: expose **2–3 tools** that connect directly to
-steps in your Milestone 01 workflow. Each tool should wrap a Python
-function you wrote for a skill or automation.
+Registered in `.mcp.json`:
 
----
-
-## Recommended pattern: two servers, by concern
-
-The reference repo splits MCP into two FastMCP servers — copy that split:
-
-| Server | What it exposes | Reference |
-| --- | --- | --- |
-| **Data server** | Read-only **resources** (URIs): your raw tables, FAQ KB, dictionaries, the working CSVs from a run | `customer-ticket-process/mcp_servers/data_server.py` |
-| **Skills/tools server** | Callable **tools**: thin subprocess wrappers around your skills and automations, returning the JSON envelope verbatim | `customer-ticket-process/mcp_servers/skills_server.py` |
-
-The split makes it obvious which server serves *work* and which serves
-*data*. Models that browse resources don't accidentally run tools, and
-tool calls don't have to plumb data through arguments.
+| Server | Module | What it exposes |
+|--------|--------|-----------------|
+| `gymshark-tools` | `gymshark_mcp_server.py` | Callable tools — runs pipeline steps |
+| `gymshark-data` | `data_server.py` | Read-only resources — browse raw data |
 
 ---
 
-## Files in this folder (after you build it)
+## Tools server — `gymshark_mcp_server.py`
 
-```
-mcp_servers/
-├── README.md            # this file
-├── __init__.py          # empty, marks the folder as a package
-├── data_server.py       # your data resource server  (recommended)
-├── tools_server.py      # your tools/skills server   (recommended)
-└── example_server.py    # the template stub shipped here — delete when you have real servers
-```
+### Tool 1: `score_creators`
 
-Register your servers in [`../.mcp.json`](../.mcp.json) so Claude Code
-launches them. The reference repo's [`.mcp.json`](../../customer-ticket-process/.mcp.json)
-is one literal block to copy and rename.
+| | |
+|---|---|
+| **Purpose** | Score and shortlist creator prospects (Skill 01) |
+| **Inputs** | None — reads `data/creators.csv` |
+| **Returns** | JSON: `eligible_count`, `ineligible_count`, `eligible[]` (creator_id, name, tier, gymshark_brand_fit, recommendation), `ineligible[]` (creator_id, name, disqualification_reason) |
+| **Workflow step** | Phase 1 — Creator Sourcing |
+| **Underlying function** | `skills/skill-01-creator-scoring/scoring_helpers.py → shortlist_creators()` |
+
+### Tool 2: `check_creator_risk`
+
+| | |
+|---|---|
+| **Purpose** | Run sentiment and brand-safety analysis for one creator (Skill 02) |
+| **Inputs** | `creator_id: str` |
+| **Returns** | JSON: `risk_level` (LOW/MEDIUM/HIGH/UNKNOWN), `emoji`, `reason`, `recommendation`, `metrics` (positive_pct, negative_pct, flagged_pct, avg_sentiment, purchase_intent_count) |
+| **Workflow step** | Phase 1b — Pre-Outreach Safety Check |
+| **Underlying function** | `skills/skill-02-sentiment-risk/sentiment_helpers.py → calculate_sentiment_metrics(), assign_risk_level()` |
+
+### Tool 3: `draft_outreach_message`
+
+| | |
+|---|---|
+| **Purpose** | Draft a personalised outreach message for an approved creator (Skill 03) |
+| **Inputs** | `creator_id: str`, `model: str` (default: `api-llama-4-scout`) |
+| **Returns** | Formatted plain-text outreach draft with header (name, channel, deal type, word count) and any validation issues flagged for human review |
+| **Workflow step** | Phase 2 — Outreach Drafting |
+| **Underlying function** | `skills/skill-03-outreach-drafting/outreach_helpers.py → build_outreach_prompt(), format_outreach_output()` |
+
+### How the model decides which tool to call
+
+The model follows the pipeline sequence:
+
+1. Call `score_creators` → get ranked shortlist
+2. For each eligible creator, call `check_creator_risk(creator_id)` → get risk level
+3. For creators with `risk_level == "LOW"` (or manually approved MEDIUM), call `draft_outreach_message(creator_id)` → get formatted draft
+
+The `gymshark-tools` server's `instructions` field encodes this order explicitly, so Claude Code surfaces the right tool at each step without needing to re-read the pipeline logic.
 
 ---
 
-## Run + test
+## Data server — `data_server.py`
+
+Read-only resources the model can browse before or during a pipeline run.
+
+### Resource 1: `creators://all`
+
+| | |
+|---|---|
+| **Purpose** | Browse all creator prospects |
+| **Returns** | JSON array — creator_id, name, tier, subscribers, gymshark_brand_fit, brand_safety, outreach_recommended, suggested_deal_type |
+| **Source file** | `data/creators.csv` |
+
+### Resource 2: `creators://{creator_id}`
+
+| | |
+|---|---|
+| **Purpose** | Full profile for one creator, merged with their CRM record |
+| **Returns** | JSON object — all fields from creators.csv + crm_records.csv |
+| **Source files** | `data/creators.csv` + `data/crm_records.csv` |
+
+### Resource 3: `campaigns://summary`
+
+| | |
+|---|---|
+| **Purpose** | Portfolio-level campaign performance for existing partners |
+| **Returns** | JSON — total budget/revenue, avg ROI (affiliate + brand_ambassador only), renewal count, breakdown by tier |
+| **Source files** | `data/campaign_performance.csv` + `data/existing_partners.csv` |
+
+---
+
+## Testing
 
 ```bash
-# Inspect the example server with the MCP inspector UI:
-uv run mcp dev mcp_servers/example_server.py
-
-# Run a server directly (Claude Code does this for you via .mcp.json):
-uv run python -m mcp_servers.example_server
+uv run pytest tests/test_mcp_tools.py        # tools server tests
+uv run pytest tests/test_data_server.py      # data server tests
 ```
 
-Once registered in `.mcp.json` and Claude Code is restarted, you can ask
-Claude things like:
+Inspect a server interactively:
 
-> "List the resources from the data server, then call the
-> `<your_tool_name>` tool with `case_id="CASE-00042"`."
-
----
-
-## Tool design checklist
-
-For each tool you expose, document in this folder's `README.md`:
-
-- **Name** (snake_case Python identifier)
-- **Purpose** (one sentence)
-- **Inputs** (typed arguments)
-- **Returns** (the JSON envelope shape)
-- **Underlying script** (which `skills/<name>/scripts/<name>.py` or
-  `automations/<name>/scripts/<name>.py` it wraps)
-- **Workflow step** (which step from your Milestone 01 diagram this serves)
-
----
-
-## Reference (read these in order)
-
-1. `customer-ticket-process/mcp_servers/README.md` — the conceptual map.
-2. `customer-ticket-process/mcp_servers/data_server.py` (~5 KB) — shows the
-   resource pattern (`@server.resource("tickets://{ticket_id}")`).
-3. `customer-ticket-process/mcp_servers/skills_server.py` (~4 KB) — shows
-   the tool-wraps-script pattern (`subprocess.run` returning the envelope).
-4. `customer-ticket-process/.mcp.json` — three lines per server.
+```bash
+uv run mcp dev mcp_servers/gymshark_mcp_server.py
+uv run mcp dev mcp_servers/data_server.py
+```

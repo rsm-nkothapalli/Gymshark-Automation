@@ -1,0 +1,105 @@
+{
+  "step": "03_decision",
+  "approved": [],
+  "flagged_for_human_review": [
+    {
+      "creator_id": "28588CF6",
+      "name": "Isabelle Lynn",
+      "tier": "nano",
+      "risk_level": "MEDIUM",
+      "reason": "avg_compound=0.223 (below 0.65 floor) \u2014 borderline, recommend human review"
+    },
+    {
+      "creator_id": "B33FF4E1",
+      "name": "Naomi | Fitness ",
+      "tier": "nano",
+      "risk_level": "UNKNOWN",
+      "reason": "Insufficient data \u2014 fewer than 50 comments"
+    },
+    {
+      "creator_id": "055F0DC8",
+      "name": "Sydney Lerz",
+      "tier": "nano",
+      "risk_level": "UNKNOWN",
+      "reason": "Insufficient data \u2014 fewer than 50 comments"
+    },
+    {
+      "creator_id": "CB248BD0",
+      "name": "Jenni Ducklas",
+      "tier": "nano",
+      "risk_level": "MEDIUM",
+      "reason": "avg_compound=0.468 (below 0.65 floor) \u2014 borderline, recommend human review"
+    },
+    {
+      "creator_id": "10490350",
+      "name": "Kayla Lashae Fit",
+      "tier": "nano",
+      "risk_level": "MEDIUM",
+      "reason": "avg_compound=0.618 (below 0.65 floor) \u2014 borderline, recommend human review"
+    },
+    {
+      "creator_id": "2FE3269E",
+      "name": "Thuvan Pham",
+      "tier": "nano",
+      "risk_level": "UNKNOWN",
+      "reason": "Insufficient data \u2014 fewer than 50 comments"
+    },
+    {
+      "creator_id": "5B3C3710",
+      "name": "Justin Lassiter",
+      "tier": "nano",
+      "risk_level": "UNKNOWN",
+      "reason": "Insufficient data \u2014 fewer than 50 comments"
+    },
+    {
+      "creator_id": "637AF227",
+      "name": "Patrice Ariel",
+      "tier": "nano",
+      "risk_level": "UNKNOWN",
+      "reason": "Insufficient data \u2014 fewer than 50 comments"
+    },
+    {
+      "creator_id": "90C84C00",
+      "name": "Sophie Reid",
+      "tier": "micro",
+      "risk_level": "MEDIUM",
+      "reason": "avg_compound=0.452 (below 0.65 floor) \u2014 borderline, recommend human review"
+    },
+    {
+      "creator_id": "FB2DBC28",
+      "name": "Tajera Notch",
+      "tier": "nano",
+      "risk_level": "UNKNOWN",
+      "reason": "Insufficient data \u2014 fewer than 50 comments"
+    },
+    {
+      "creator_id": "49C6C6F2",
+      "name": "Sam Short",
+      "tier": "nano",
+      "risk_level": "UNKNOWN",
+      "reason": "Insufficient data \u2014 fewer than 50 comments"
+    },
+    {
+      "creator_id": "9FEAF5A2",
+      "name": "Will Tennyson",
+      "tier": "mega",
+      "risk_level": "MEDIUM",
+      "reason": "avg_compound=0.245 (below 0.65 floor) \u2014 borderline, recommend human review"
+    },
+    {
+      "creator_id": "B46F1BA8",
+      "name": "Whitney Simmons",
+      "tier": "mega",
+      "risk_level": "MEDIUM",
+      "reason": "avg_compound=0.513 (below 0.65 floor) \u2014 borderline, recommend human review"
+    },
+    {
+      "creator_id": "AD6A69CE",
+      "name": "SpeedUniverse",
+      "tier": "mega",
+      "risk_level": "MEDIUM",
+      "reason": "avg_compound=0.310 (below 0.65 floor) \u2014 borderline, recommend human review"
+    }
+  ],
+  "skipped_high_risk": []
+}
