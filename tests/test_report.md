@@ -24,8 +24,11 @@ Each row is one test case run end-to-end: a real LLM call, scored by a second LL
 | brand-fit-01: HIGH-GFS, GREEN safety, LOW risk | "Whitney Simmons has a strong brand fit with Gymshark, driven by her authentic 8/10 score…" | +1.00 ✓ | +1.00 ✓ | +1.00 ✓ | +1.00 ✓ | **PASS** |
 | brand-fit-02: AMBER safety, HIGH risk creator (FC-06) | "Marcus Reed's brand fit is cautious — a gift-seeding approach may be suitable, though…" | +1.00 ✓ | +1.00 ✓ | +1.00 ✓ | −0.30 ✗ No clear hold/escalate; unsupported claim | **FAIL** |
 | brand-fit-03: Minimal-info creator, no-hallucination check (FC-01) | "Alex Rivera shows moderate brand fit based on a 7.0 GFS…" | +1.00 ✓ | +1.00 ✓ | +1.00 ✓ | +1.00 ✓ | **PASS** |
+| brief-01: Nano yoga creator, gift seeding, ADAPT line | All 5 sections present; CONTENT FORMAT suggests studio/flow video format; relaxed gift-seeding tone | +1.00 ✓ | +1.00 ✓ | +0.70 ✓ | +0.90 ✓ | **PASS** |
+| brief-02: Micro strength creator, affiliate deal, LIFTING line (FC-05) | All 5 sections; MUST INCLUDE references affiliate link; strength-specific language | +1.00 ✓ | +1.00 ✓ | +0.80 ✓ | −0.40 ✗ Promo code not referenced; deal-type tone mismatch | **FAIL** |
+| brief-03: Minimal-context creator, no-hallucination check (FC-01) | All 5 sections; TRAINING line; no invented audience traits | +1.00 ✓ | +1.00 ✓ | −0.30 ✗ KEY MESSAGE generic — not specific to functional fitness | +0.60 ✓ | **FAIL** |
 
-**Summary**: 8/10 passed · 2/10 failed · Both failures on Face Validity only
+**Summary**: 9/13 passed · 4/13 failed · All failures on Quality or Face Validity; Faithfulness and Answer Relevancy passed in every case
 
 ---
 
@@ -78,6 +81,16 @@ This is a useful result: the anticipated failure (word count violation) is lower
 **Why it happened**: Faithfulness measures whether claims are traceable to the retrieval context. Because the outreach prompt explicitly instructs "do not reference brand safety, GFS scores, or internal metrics," the model omits those, so every claim in the draft *is* traceable to something in context. AnswerRelevancy measures whether the output addresses the task — and drafting an outreach email always addresses the outreach task. Neither check is sensitive enough to catch subtle quality issues like tone register or missing risk directives.
 
 **What would fix it**: Two adjustments: (1) lower the thresholds for Faithfulness and AnswerRelevancy to 0.5 so they serve as floors rather than active filters; (2) add a second GEval check targeting business-specific rules such as tone register, risk language, and format compliance — things that require domain knowledge to evaluate. The current split of one Quality check and one Face Validity check combines too many concerns in a single criterion.
+
+---
+
+### Pattern 4: Product brief KEY MESSAGE defaults to generic fitness language
+
+**What happened**: Cases `brief-02-strength-affiliate` and `brief-03-no-hallucination` both failed on at least one check. In `brief-02`, the Face Validity judge (score 0.40) found the brief did not reference the affiliate promo code in MUST INCLUDE and the overall tone did not clearly distinguish gift seeding from affiliate. In `brief-03`, the Quality check (score 0.30) found the KEY MESSAGE was generic — *"experience the best in athletic wear"* — with no reference to functional fitness despite the niche being explicitly provided.
+
+**Why it happened**: The brief prompt asks for niche-specific language but does not enforce it structurally. The LLM defaults to brand-level language ("experience Gymshark gear") when the niche is abstract (e.g., "Functional Fitness") rather than specific (e.g., "Yoga" or "Powerlifting"). For affiliate vs. gift seeding, the deal-type note in the prompt is one sentence and is easily deprioritized when the model is generating the 5-section format.
+
+**What would fix it**: Two targeted additions: (1) require KEY MESSAGE to use the creator's niche as a noun phrase — e.g., *"KEY MESSAGE must mention {niche} directly, not generic fitness language"*; (2) add a conditional MUST INCLUDE rule: *"If deal_type is affiliate, MUST INCLUDE must reference 'promo code' or 'affiliate link' explicitly."*
 
 ---
 
