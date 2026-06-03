@@ -1,28 +1,23 @@
 # Predicted Failure Cases
 
-List **at least 5 realistic ways** your AI coworker or workflow could
-fail. Focus on practical failures, not abstract risks.
-
-Examples to draw from:
-
-- Missing data
-- Conflicting sources
-- Wrong document retrieved
-- Incorrect classification
-- Bad recommendation
-- Output is too generic
-- User skips review
-- Tool or API fails
-- AI produces a result that looks polished but is not supported by evidence
-- The process is faster but less accurate
+Pipeline under test: Gymshark Influencer Pipeline — Skills 01–03, RAG retrieval, brand-fit analysis, product briefs.
 
 | Failure case | Why it might happen | Business consequence | How the user would notice | How your process handles it |
 |---|---|---|---|---|
-| *(add row 1)* | | | | |
-| *(add row 2)* | | | | |
-| *(add row 3)* | | | | |
-| *(add row 4)* | | | | |
-| *(add row 5)* | | | | |
+| AI invents creator details not in the data | LLM fabricates a competitor affiliation or audience trait not present in creators.csv or the prompt | Outreach built on a wrong assumption damages the creator relationship | Brand-fit analysis cites a "known partnership with Lululemon" that appears nowhere in the data | `FaithfulnessMetric` checks every claim traces back to the retrieval context; tested in `brand-fit-03-no-hallucination` |
+| Outreach draft contains banned phrases | LLM ignores the explicit NEVER USE list ("amazing", "love your content", etc.) despite clear instructions | Message sounds like a mass-template blast; creator dismisses it immediately | Outreach reads "You are amazing!" or "We love your content" | `validate_message()` detects banned phrases at runtime; tested in `outreach-04-banned-phrases` |
+| Draft leaks internal scoring metrics | LLM includes "GFS=7.5" or "risk_level=LOW" from the prompt context in the email body | Creator sees Gymshark is running an automated scoring system; trust collapses | Draft says "Based on your authenticity score of 8/10…" | Prompt rule says "Do NOT reference any internal metrics"; tested in `outreach-05-no-metric-leakage` |
+| Draft exceeds tier word-count limit | Word-count instruction is natural language ("Max 200 words"); LLM ignores it under complex prompts | Mega-tier recipients (busy, high-status) receive a 300-word email and delete it | Word count > 200 for a mega creator | `validate_message()` catches excess words; before/after test in `test_before_improvement_mega_wordcount` |
+| Output is too generic — no creator-specific observation | Signals and content-style hints in the prompt are ignored; LLM defaults to a template | Partnership email indistinguishable from spam; no response | "We love fitness creators like you" with no mention of anything specific | Prompt explicitly requires ONE specific observation; tested in `outreach-06-minimal-context` |
+| Brand-fit analysis sounds confident but contradicts risk signals | LLM smooths over HIGH risk or AMBER brand safety; produces a positive summary regardless | Team approves outreach to a high-risk creator; reputational damage if content misfires | Analysis says "ideal partner" for a creator with 20% flagged comments | `BrandFitFaceValidity` GEval check; tested in `brand-fit-02-high-risk` |
+| RAG retrieves a weakly matched document | Query is broad (tier + niche + deal type); embedding distance pulls a product-catalog chunk instead of an outreach-tone chunk | Draft follows product specs instead of tone guidelines; sounds like an ad, not a person | Email uses product jargon rather than conversational language | `FaithfulnessMetric` score drops when context is irrelevant; `rag_sources` shown in UI for human review |
+| LLM adds markdown formatting to outreach email | System prompt says "Output only the email" but LLM adds `**bold**` headers or bullet points | Email client renders raw asterisks; looks unprofessional | Recipient sees `**Hi Sophie,**` instead of `Hi Sophie,` | Prompt ends with "No markdown"; `OutreachFaceValidity` GEval flags formatting red flags |
 
-At least **2 of these failures** should be the ones you specifically
-test against in `tests/test_workflow.py` (see `tests/README.md`).
+| LLM inflates `comment_sentiment_score` from a thin, cherry-picked comment sample | The prompt says "score 3 if fewer than 10 comments shown" but that is a soft instruction — if 4 comments are all glowing ("just ordered!", "you inspired me"), the LLM ignores the rule and assigns 7+. The 30%-weighted score then pushes a low-engagement creator above the shortlist threshold | A creator with <10 comments — i.e., effectively no proven audience response — gets shortlisted alongside creators with hundreds of genuine community reactions; Gymshark invests outreach into an unvalidated micro-account | Creator has `total_comments=4` but `comment_sentiment_score=7` in the output, contributing to a GFS above 7.0 | Code-side guard added in `score_creator()`: `llm["comment_sentiment_score"] = min(llm["comment_sentiment_score"], 3)` when `total_comments < 10`; tested in `test_thin_comment_sample_capped_at_3_by_score_creator` |
+| LLM assigns high `niche_score` to a lifestyle creator based on transcript bias over title patterns | `sample_text` passed to the LLM is the first 2 000 chars of transcript + titles concatenated — if the transcript is long and gym-adjacent, it crowds out the lifestyle title evidence. The LLM also has a natural tendency to weight the richer linguistic input (transcript) over a flat list (titles), even though titles are the most reliable indicator of what a creator *consistently* publishes | A lifestyle/fashion creator who occasionally mentions the gym surfaces in the Gymshark shortlist; campaign spend reaches an audience whose primary interest is skincare and home décor, not fitness | Creator output shows `niche_score=7` despite 9/10 titles being "GRWM for Autumn", "Outfit Haul", "Skincare Routine" | Prompt explicitly states "titles are the strongest signal … if titles are mostly fashion or lifestyle — score low"; tested in `test_lifestyle_title_pattern_suppresses_niche_score` (integration test confirms LLM compliance) |
+
+At least **4 of these failures** are specifically tested:
+- `outreach-04-banned-phrases` → FC: Outreach draft contains banned phrases (`tests/test_ai_performance.py`)
+- `brand-fit-02-high-risk` → FC: Brand-fit analysis contradicts risk signals (`tests/test_ai_performance.py`)
+- `test_thin_comment_sample_capped_at_3_by_score_creator` → FC: LLM inflates `comment_sentiment_score` from thin sample (`tests/test_community_scoring.py`)
+- `test_lifestyle_title_pattern_suppresses_niche_score` → FC: LLM assigns high niche_score despite lifestyle-dominant titles (`tests/test_community_scoring.py`)

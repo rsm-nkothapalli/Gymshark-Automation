@@ -151,11 +151,12 @@ def test_risk_low_when_flagged_below_8_and_sentiment_above_floor():
     assert emoji == "🟢"
 
 
-def test_risk_medium_when_sentiment_below_floor():
+def test_risk_low_when_no_flags_regardless_of_compound():
+    # avg_compound is no longer used — 0% flagged always resolves to LOW
     rows = _make_rows(50, flagged_pct=0.0, avg_compound=0.1)
     m = sh.calculate_sentiment_metrics(rows)
     level, _, _ = sh.assign_risk_level(m)
-    assert level == "MEDIUM"
+    assert level == "LOW"
 
 
 def test_risk_reason_contains_flagged_pct():

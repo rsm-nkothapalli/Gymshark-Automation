@@ -1,0 +1,213 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Gymshark Nexus Design Tokens */
+  
+  /* Surfaces */
+  --bg: #0A0A0A;
+  --panel: #121414;
+  --panel-2: #16191A;
+  --panel-3: #0C0F0F;
+  --panel-h: #1A1D1E;
+  
+  /* Borders */
+  --border: #1F2937;
+  --border-2: rgba(255,255,255,0.10);
+  --border-3: rgba(255,255,255,0.16);
+  
+  /* Text */
+  --t1: #F4F4F5;
+  --t2: #9CA0A6;
+  --t3: #5B5F66;
+  --t4: #3A3D43;
+  
+  /* Accent: Brand Neon Lime */
+  --lime: #95FF00;
+  --lime-2: #B6FF3D;
+  --lime-bg: rgba(149,255,0,0.10);
+  --lime-glow: rgba(149,255,0,0.32);
+  
+  /* Status / Semantic */
+  --amber: #FFB800;
+  --orange: #FF6B35;
+  
+  /* Shadcn mapping */
+  --background: var(--bg);
+  --foreground: var(--t1);
+  --card: var(--panel);
+  --card-foreground: var(--t1);
+  --popover: var(--panel);
+  --popover-foreground: var(--t1);
+  --primary: var(--lime);
+  --primary-foreground: #0A0A0A;
+  --secondary: var(--panel-2);
+  --secondary-foreground: var(--t1);
+  --muted: var(--panel-2);
+  --muted-foreground: var(--t2);
+  --accent: var(--lime-bg);
+  --accent-foreground: var(--lime);
+  --destructive: var(--orange);
+  --destructive-foreground: #ffffff;
+  --input: var(--panel-2);
+  --ring: var(--lime);
+  --radius: 0.5rem;
+  
+  /* Sidebar */
+  --sidebar: var(--panel);
+  --sidebar-foreground: var(--t1);
+  --sidebar-primary: var(--lime);
+  --sidebar-primary-foreground: #0A0A0A;
+  --sidebar-accent: var(--lime-bg);
+  --sidebar-accent-foreground: var(--lime);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--lime);
+}
+
+@theme inline {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+  --color-panel-h: var(--panel-h);
+  --color-border: var(--border);
+  --color-border-2: var(--border-2);
+  --color-border-3: var(--border-3);
+  --color-t1: var(--t1);
+  --color-t2: var(--t2);
+  --color-t3: var(--t3);
+  --color-t4: var(--t4);
+  --color-lime: var(--lime);
+  --color-lime-2: var(--lime-2);
+  --color-lime-bg: var(--lime-bg);
+  --color-lime-glow: var(--lime-glow);
+  --color-amber: var(--amber);
+  --color-orange: var(--orange);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    background: var(--bg);
+    color: var(--t1);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    @apply bg-bg text-t1 font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #26282D;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #353840;
+  }
+  
+  ::selection {
+    background: var(--lime);
+    color: #0A0A0B;
+  }
+  
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+/* Pulse animation for live indicators */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.animate-pulse-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Card glow effect */
+.card-glow-active {
+  box-shadow: 0 0 0 1px var(--lime), 0 0 24px -8px var(--lime-glow);
+}
+
+/* CTA button glow */
+.cta-glow {
+  box-shadow: 0 12px 32px -10px var(--lime-glow);
+}
+
+/* Hover lift transition */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+}
+
+/* Layout transitions */
+.layout-transition {
+  transition: all 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Progress bar animation */
+@keyframes fill-bar {
+  from { width: 0; }
+}
+
+.animate-fill {
+  animation: fill-bar 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}

@@ -31,6 +31,7 @@ TRITONAI_BASE = "https://tritonai-api.ucsd.edu/v1"
 
 # ── document parsing ──────────────────────────────────────────────────────────
 
+
 def _parse_frontmatter(content: str) -> tuple[dict, str]:
     meta: dict[str, str] = {}
     if not content.startswith("---"):
@@ -42,7 +43,7 @@ def _parse_frontmatter(content: str) -> tuple[dict, str]:
         if ":" in line:
             k, _, v = line.partition(":")
             meta[k.strip()] = v.strip()
-    return meta, content[end + 3:].strip()
+    return meta, content[end + 3 :].strip()
 
 
 def _chunk_document(doc_id: str, meta: dict, body: str) -> list[dict]:
@@ -56,12 +57,14 @@ def _chunk_document(doc_id: str, meta: dict, body: str) -> list[dict]:
         text = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
         if not text:
             continue
-        chunks.append({
-            "doc_id": doc_id,
-            "title": title,
-            "section": heading,
-            "snippet": text[:300].replace("\n", " ").strip(),
-        })
+        chunks.append(
+            {
+                "doc_id": doc_id,
+                "title": title,
+                "section": heading,
+                "snippet": text[:300].replace("\n", " ").strip(),
+            }
+        )
     return chunks
 
 
@@ -79,12 +82,16 @@ def _load_all_chunks() -> list[dict]:
 
 # ── embedding helpers ─────────────────────────────────────────────────────────
 
+
 def _get_client():
+    import httpx
     from openai import OpenAI
+
     key = os.environ.get("TRITONAI_API_KEY", "")
     if not key:
         raise RuntimeError("TRITONAI_API_KEY is not set — copy .env.example to .env and fill in your key.")
-    return OpenAI(api_key=key, base_url=TRITONAI_BASE)
+    # httpx 0.28+ removed the `proxies` kwarg; passing http_client bypasses the SDK's internal proxy wiring
+    return OpenAI(api_key=key, base_url=TRITONAI_BASE, http_client=httpx.Client())
 
 
 def _embed(texts: list[str]) -> list[list[float]]:
@@ -101,6 +108,7 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 # ── index ─────────────────────────────────────────────────────────────────────
 
+
 def build_index() -> list[dict]:
     """Embed all KB chunks and cache to INDEX_PATH. Returns chunk list."""
     INDEX_DIR.mkdir(exist_ok=True)
@@ -114,10 +122,7 @@ def build_index() -> list[dict]:
 
     index_data = {
         "model": EMBED_MODEL,
-        "chunks": [
-            {**c, "embedding": emb}
-            for c, emb in zip(chunks, embeddings)
-        ],
+        "chunks": [{**c, "embedding": emb} for c, emb in zip(chunks, embeddings)],
     }
     INDEX_PATH.write_text(json.dumps(index_data), encoding="utf-8")
     print(f"[rag] {len(chunks)} chunks indexed → {INDEX_PATH}")
@@ -132,6 +137,7 @@ def _load_index() -> list[dict]:
 
 
 # ── public API ────────────────────────────────────────────────────────────────
+
 
 def retrieve(query: str, top_k: int = 3) -> list[dict]:
     """Return up to top_k chunks most relevant to query.

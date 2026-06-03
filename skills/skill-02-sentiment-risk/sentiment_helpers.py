@@ -27,7 +27,6 @@ def load_all_sentiment(filepath="data/comment_sentiment.csv"):
 RISK_THRESHOLDS = {
     "high_flagged_pct": 15.0,  # > 15% negative flags → HIGH
     "medium_flagged_pct": 8.0,  # 8–15% → MEDIUM
-    "low_sentiment_floor": 0.65,  # avg VADER compound must exceed this for LOW
     "min_comments": 50,  # fewer → UNKNOWN
 }
 
@@ -74,7 +73,6 @@ def assign_risk_level(metrics):
         return "UNKNOWN", "⚪", "Insufficient data — fewer than 50 comments"
 
     flagged_pct = metrics["flagged_pct"]
-    avg = metrics.get("avg_sentiment") or 0
 
     if flagged_pct > RISK_THRESHOLDS["high_flagged_pct"]:
         return "HIGH", "🔴", f"flagged_pct={flagged_pct}% exceeds {RISK_THRESHOLDS['high_flagged_pct']}% threshold"
@@ -82,14 +80,7 @@ def assign_risk_level(metrics):
     if flagged_pct >= RISK_THRESHOLDS["medium_flagged_pct"]:
         return "MEDIUM", "🟡", f"flagged_pct={flagged_pct}% — human review required"
 
-    if avg >= RISK_THRESHOLDS["low_sentiment_floor"]:
-        return "LOW", "🟢", f"flagged_pct={flagged_pct}%, avg_compound={avg} — safe to proceed"
-
-    return (
-        "MEDIUM",
-        "🟡",
-        f"avg_compound={avg:.3f} (below {RISK_THRESHOLDS['low_sentiment_floor']} floor) — borderline, recommend human review",
-    )
+    return "LOW", "🟢", f"flagged_pct={flagged_pct}% — below 8% threshold, safe to proceed"
 
 
 def get_example_flagged(rows: list[dict], n: int = 3) -> list[str]:

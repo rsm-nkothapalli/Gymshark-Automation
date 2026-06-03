@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytest.importorskip("mcp", reason="mcp package not installed — skipping MCP server tests")
+
 # ---------------------------------------------------------------------------
 # Load the MCP server module directly (tools are plain Python functions)
 # ---------------------------------------------------------------------------

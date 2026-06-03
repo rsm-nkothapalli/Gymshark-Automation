@@ -14,6 +14,7 @@ if str(_ROOT) not in sys.path:
 
 try:
     from rag.retrieval import retrieve as _rag_retrieve
+
     _RAG_AVAILABLE = True
 except ImportError:
     _RAG_AVAILABLE = False
@@ -60,11 +61,11 @@ def load_creator_context(creator_id, creators_path="data/creators.csv", crm_path
 
 
 TIER_TONE_GUIDE = {
-    "nano": {"max_words": 80, "ask": "gift product with no posting obligation"},
-    "micro": {"max_words": 80, "ask": "affiliate partnership with promo code"},
-    "mid": {"max_words": 90, "ask": "paid partnership or retainer"},
-    "macro": {"max_words": 90, "ask": "formal partnership discussion"},
-    "mega": {"max_words": 70, "ask": "direct ask for a call"},
+    "nano": {"max_words": 300, "tone": "warm, peer-level", "ask": "gift product with no posting obligation"},
+    "micro": {"max_words": 300, "tone": "warm", "ask": "affiliate partnership with promo code"},
+    "mid": {"max_words": 250, "tone": "professional", "ask": "paid partnership or retainer"},
+    "macro": {"max_words": 220, "tone": "professional", "ask": "formal partnership discussion"},
+    "mega": {"max_words": 200, "tone": "brief, pitch-led", "ask": "direct ask for a call"},
 }
 
 BANNED_PHRASES = [
@@ -116,6 +117,7 @@ def build_outreach_prompt(context: dict, tone_override: str = None) -> str:
     """Build a personalised outreach prompt. tone_override: 'warm' | 'direct' | 'brief'."""
     tier = context.get("tier", "micro")
     guide = get_tone_guide(tier)
+    # tone controls brevity lookup ("warm"|"direct"|"brief"); guide["tone"] is shown in the prompt
     tone = tone_override or "warm"
 
     name = context.get("name", "Creator")
@@ -129,19 +131,21 @@ def build_outreach_prompt(context: dict, tone_override: str = None) -> str:
     signals_neg = (context.get("signals_neg") or "").strip()
     auth_reasoning = (context.get("authenticity_reasoning") or "").strip()
 
-    # Build background context for the LLM — these are writing angles, NOT phrases to quote
+    # Build background context for the LLM — writing angles and verbatim signals
     context_notes = []
     if signals_pos and signals_pos.lower() != "none":
-        context_notes.append(f"- This creator values authenticity and is known for unsponsored, honest content. Let this inform your angle — do NOT quote their phrases or reference 'not sponsored' directly.")
+        context_notes.append(f"- Positive signal (for context only — do not quote verbatim): {signals_pos}")
     if signals_community and signals_community.lower() != "none":
-        context_notes.append(f"- They have a close, personal relationship with their audience. Match that energy.")
+        context_notes.append(f"- Community signal (for context only — do not quote verbatim): {signals_community}")
     if content_style:
         style_hints = {
             "Try-On Haul": "Their content focuses on real fit and how gear feels on the body — angle the pitch around product quality and honest testing.",
             "Review": "They do structured, honest product breakdowns — angle the pitch around Gymshark's product specifics (material, construction, performance).",
             "Workout Vlog": "They film real training sessions — angle the pitch around how Gymshark gear actually performs under real gym conditions.",
         }
-        context_notes.append(f"- {style_hints.get(content_style, f'Content style is {content_style} — match the pitch to how they create.')}")
+        context_notes.append(
+            f"- {style_hints.get(content_style, f'Content style is {content_style} — match the pitch to how they create.')}"
+        )
     if auth_reasoning:
         context_notes.append(f"- Background: {auth_reasoning}")
     if signals_neg and signals_neg.lower() != "none":
@@ -149,8 +153,6 @@ def build_outreach_prompt(context: dict, tone_override: str = None) -> str:
 
     rag_context = _get_rag_context(tier, deal, niche)
     rag_section = f"\nBrand policy context (use to stay compliant):\n{rag_context}\n" if rag_context else ""
-
-    never_use = "amazing, inspiring, love your content, huge fan, came across your page, perfect fit, I'm [name], My name is"
 
     offer = {
         "gift_seeding": "send you some Gymshark gear as a gift — no strings attached",
@@ -163,16 +165,20 @@ def build_outreach_prompt(context: dict, tone_override: str = None) -> str:
     brevity = {
         "brief": "2 sentences max after the greeting. Ultra short.",
         "direct": f"3-4 sentences max. No fluff. Max {guide['max_words']} words.",
-        "warm":   f"4-5 natural sentences. Friendly but not over the top. Max {guide['max_words']} words.",
+        "warm": f"4-5 natural sentences. Friendly but not over the top. Max {guide['max_words']} words.",
     }[tone]
 
-    return f"""Write a short outreach email from the Gymshark Partnerships Team to {first_name}, a {niche} creator on YouTube.
+    context_block = "\n".join(context_notes)
+    context_section = f"\nCreator context:\n{context_block}\n" if context_notes else ""
 
+    return f"""Write a short outreach email from the Gymshark Partnerships Team to {name}, a {niche} creator on YouTube.
+
+Tone: {guide["tone"]}
 Length: {brevity}
-
+{context_section}
 Structure:
 - Greeting: Hi {first_name},
-- Line 1: say we like their content and give ONE specific reason why (their niche, content style, or what makes them stand out). Keep it natural — not a compliment, just a genuine observation.
+- Line 1: make ONE specific, factual observation about their content (their niche, training style, or what makes them distinctive). State it as a fact, not as praise or admiration.
 - Line 2-3: propose the offer — we'd like to {offer}.
 - Closing: one simple ask (e.g. would they be open to it / let us know if interested).
 - Sign off: Gymshark Partnerships Team
@@ -180,7 +186,7 @@ Structure:
 Rules:
 - Sound like a real person wrote this, not a marketing bot.
 - Do NOT reference "authenticity signals", "brand safety", "GFS scores" or any internal metrics.
-- Do NOT use: {never_use}.
+- Do NOT open with fan-style approval or enthusiasm. Never use phrases that express how much we love, enjoy, admire, or have been following their content — no "we love your content", "we enjoy your videos", "we've been following you", "we really admire", or any similar opener. The first content line must be a neutral observation, not praise.
 - Do NOT mention specific Gymshark product line names (ADAPT, FORM, TRAINING, LIFTING, RUNNING, CBUM, etc.) — just say "our gear" or "our latest collection".
 - Write as "we". No fake names.
 {rag_section}

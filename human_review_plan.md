@@ -1,23 +1,13 @@
-# Human Review and Control Plan
+---
+title: "Human Review and Control Plan"
+subtitle: "Gymshark AI Influencer Pipeline · Milestone 03 · Group 18"
+---
 
-Replace the example rows below with **at least 6 process steps** from
-your workflow. At least **1–2 rows** must be an explicit human review or
-approval point.
-
-For each review point, be specific about what the human sees:
-
-- The AI-generated answer
-- The source documents used
-- The data used by a tool
-- A summary of the AI's reasoning
-- A warning that the AI is uncertain
-- A button to approve, edit, reject, or escalate
-
-| Process step | What the AI does | What the human does | Human approval required? | What could go wrong? | What should happen if there is a problem? |
+| **Process Step** | **What the AI does** | **What the human does** | **Human approval required?** | **What could go wrong?** | **What should happen if there is a problem?** |
 |---|---|---|---|---|---|
-| *(add row 1)* | | | | | |
-| *(add row 2)* | | | | | |
-| *(add row 3)* | | | | | |
-| *(add row 4)* | | | | | |
-| *(add row 5)* | | | | | |
-| *(add row 6)* | | | | | |
+| Creator Discovery & Enrichment | Searches YouTube using fitness keywords via the Data API v3; runs VADER sentiment on sampled comments; collects audience demographics; generates CRM records | Nothing — fully automated | No | API returns irrelevant creators; VADER misreads sarcastic comments as positive | Re-run with refined keywords; manually flag irrelevant creators before scoring runs |
+| AI Creator Scoring | Calculates Gymshark Fit Score (GFS) using authenticity, sentiment, niche alignment, community score, and engagement; auto-disqualifies creators flagged RED brand safety, competitor loyalty, or clickbait | Reviews the AI-generated ranked leaderboard showing each creator's GFS score, tier, disqualification reason (if any), and AMBER warning flags. Sees a "Move to Outreach" button per creator. Decides who proceeds | Yes — analyst must move each creator to outreach manually; no one proceeds automatically | GFS formula miscalibrated; AMBER creator incorrectly cleared; legitimate creator auto-disqualified by a false positive flag | Analyst overrides the recommendation; escalates borderline AMBER cases to manager; disqualification reason is visible for every rejected creator |
+| AI Drafts Personalised Outreach Email | Retrieves 3 relevant chunks from the RAG knowledge base (outreach playbook, banned phrases, deal type policy); generates a personalised email using the creator's niche, content style, tier, and pre-filled deal type | Reads the AI-generated draft email and sees the 3 RAG source documents used to write it. Reviews banned phrase check results. Adjusts tone (Warm / Direct / Brief) or deal type if needed. Clicks "Approve & Send to Manager" or regenerates | Yes — analyst must submit; email cannot leave the team without submission | AI uses a banned phrase; email is too generic or gets the deal type wrong; wrong creator name used | Analyst edits directly in the UI or regenerates with a different tone; the banned phrase checker highlights issues before submission is allowed |
+| Manager Approves Outreach Email | Nothing at this step | Sees the final draft, the creator's full profile (tier, GFS score, niche, deal type), and the RAG sources the AI used. Has buttons to Approve, Request Edit, or Reject. If rejected, provides a reason that is sent back to the analyst | Yes — only the Partnerships Manager can approve; email is not sent without this gate | Manager approves an email with incorrect deal terms or a tone that damages the creator relationship | Manager clicks Reject and provides a reason; analyst regenerates with corrected tone or deal type and resubmits for approval |
+| AI Generates Product Brief | Reads creator profile and audience gender split; selects product line (ADAPT, TRAINING, LIFTING, or RUNNING) based on niche and audience demographics; generates a unique promo code (format: GS + name + 2 digits); writes a full creative brief using RAG product catalog and brief standards | Reads the AI-generated brief including product line recommendation, promo code, creative direction, and key messages. Sees which RAG documents were used. Has buttons to Approve or Regenerate. Can override the product line manually | Yes — manager must approve before the brief is sent to the creator | Wrong product line due to inaccurate audience data; promo code format error; creative direction mismatches the creator's content style | Manager overrides the product line; regenerates if brief direction is wrong; promo code is validated against the format rule before approval is enabled |
+| AI Campaign Analysis | Calculates ROI, conversion rate, and cost-per-click per campaign; identifies top performers (ROI > 150% and conversion > 3%) and bottom performers (ROI < 20%); generates a full HTML performance dashboard with tier and deal-type breakdowns | Reviews the AI-generated dashboard showing per-creator ROI, conversion rate, and a blended portfolio summary. Uses the renewal_recommended flag from the data as a starting point. Makes the final renewal or archive decision per creator | No — analysis is informational; the renewal decision is made by the human | Campaign data join error excludes a creator; ROI inflated by a tracking anomaly; gift seeding campaigns incorrectly included in ROI comparisons | Manager flags the anomaly; data is corrected in campaign_performance.csv and the analytics script is re-run |
