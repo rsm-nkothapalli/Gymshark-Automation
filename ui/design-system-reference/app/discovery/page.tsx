@@ -39,6 +39,71 @@ interface Creator {
   signals: string[]
 }
 
+const normalizeCreator = (raw: any): Creator => {
+  const gfsValue = Number(raw.gfs ?? raw.gymshark_brand_fit ?? raw.score ?? 0)
+  const gfsTier = gfsValue >= 7 ? 'GREEN' : gfsValue >= 5.5 ? 'AMBER' : 'RED'
+  const handle = String(raw.handle || raw.youtube_handle || '@creator')
+  const name = String(raw.name || 'Creator')
+  const niche = String(raw.niche || 'General Fitness')
+  const contentStyle = String(raw.content_style || 'Fitness Content')
+  const subscribers = Number(raw.subscribers ?? raw.sub ?? 0)
+  const followers = String(raw.followers ?? raw.subscribers_fmt ?? `${subscribers}`)
+  const engagementScore = Number(raw.engagement ?? raw.engagement_score ?? 0)
+  const authScore = Number(raw.auth_score ?? raw.authenticity_score ?? 0)
+  const sentimentScore = Number(raw.sentiment ?? raw.sentiment_positive_pct ?? 0)
+
+  return {
+    id: String(raw.id ?? raw.creator_id ?? handle),
+    handle,
+    youtube_channel_url:
+      raw.youtube_channel_url ||
+      `https://www.youtube.com/${handle.replace(/^@/, '')}`,
+    name,
+    sub: String(raw.sub ?? subscribers ?? '0'),
+    niche,
+    cat: niche,
+    content_style: contentStyle,
+    followers,
+    engagement: String(raw.engagement ?? `${engagementScore.toFixed(1)}%` ?? '—'),
+    posts: String(raw.posts ?? raw.video_count ?? '—'),
+    gfs: String(raw.gfs ?? gfsValue.toFixed(1)),
+    gfsClass: gfsTier === 'AMBER' ? 'amber' : 'lime',
+    gfs_tier: gfsTier,
+    auth_score: authScore,
+    sentiment: String(raw.sentiment ?? `${sentimentScore.toFixed(0)}%`),
+    risk_level: String(raw.risk_level ?? 'UNKNOWN'),
+    img:
+      raw.img ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
+    cover:
+      raw.cover ||
+      'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80',
+    socials: [
+      {
+        kind: 'youtube',
+        label: handle,
+        count: followers,
+        er: raw.engagement_score ? `${Number(raw.engagement_score).toFixed(1)}%` : undefined,
+      },
+    ],
+    status: String(raw.status ?? (raw.outreach_recommended ? 'responded' : 'no_reply')),
+    recommendation: String(
+      raw.recommendation ??
+        (raw.outreach_recommended ? 'Recommended for outreach' : 'Hold for human review')
+    ),
+    brand_safety: String(raw.brand_safety ?? 'GREEN'),
+    signals:
+      Array.isArray(raw.signals) && raw.signals.length > 0
+        ? raw.signals
+        : [
+            `#${niche.toUpperCase().replace(/\s+/g, '_')}`,
+            `GFS: ${gfsValue.toFixed(1)}`,
+            `AUTH: ${authScore.toFixed(1)}`,
+            `RISK: ${String(raw.risk_level ?? 'UNKNOWN')}`,
+          ],
+  }
+}
+
 const CRM_TIERS = [
   { id: '1', label: '1. Seeded Creator' },
   { id: '2', label: '2. Ambassador' },
@@ -68,9 +133,10 @@ export default function DiscoveryPage() {
   useEffect(() => {
     fetch('/api/creators')
       .then((r) => r.json())
-      .then((data: Creator[]) => {
-        setCreators(data)
-        if (data.length) setActiveCreator(data[0])
+      .then((data: any[]) => {
+        const normalized = data.map(normalizeCreator)
+        setCreators(normalized)
+        if (normalized.length) setActiveCreator(normalized[0])
         setLoading(false)
       })
       .catch(() => setLoading(false))

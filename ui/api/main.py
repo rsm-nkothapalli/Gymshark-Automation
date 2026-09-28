@@ -258,18 +258,51 @@ def get_creator(creator_id: str):
 class OutreachRequest(BaseModel):
     tone: str = "warm"
     deal_type: str = ""
+    tier: str = ""
 
 
-@app.post("/api/creators/{creator_id}/outreach")
-def generate_outreach(creator_id: str, req: OutreachRequest):
+def _fallback_outreach_draft(
+    creator: dict, *, tone: str = "warm", deal_type: str = ""
+) -> str:
+    first = creator.get("name", "Creator").split()[0]
+    niche = creator.get("niche", "fitness")
+    deal_label = deal_type or creator.get("deal_type", "gift_seeding")
+    greeting = "Hi" if first else "Hello"
+    if tone.lower() == "concise":
+        return (
+            f"{greeting} {first},\n\n"
+            f"I’ve been following your {niche.lower()} content and love the way you connect with your community.\n\n"
+            f"We’d love to send you a few pieces from our latest drop for your review and would be grateful to hear if a quick call could be of interest.\n\n"
+            f"We can shape the collaboration around {deal_label.replace('_', ' ')} and a fit that feels natural for your audience.\n\n"
+            "Best,\nGymshark Partnerships"
+        )
+    return (
+        f"{greeting} {first},\n\n"
+        f"I came across your channel and loved how authentically you share your {niche.lower()} journey with your community.\n\n"
+        f"We'd love to send you some pieces from our latest collection to try out — no obligations, just a gift from us to you.\n\n"
+        f"This feels like a strong fit for a {deal_label.replace('_', ' ')} collaboration, and I’d be excited to explore a partnership that feels natural for your audience.\n\n"
+        f"Would you be open to a quick chat?\n\nBest,\nGymshark Partnerships"
+    )
+
+
+def _generate_outreach_payload(creator_id: str, req: OutreachRequest):
     creator = get_creator(creator_id)
-    from rag.retrieval import retrieve as rag_retrieve
+    try:
+        from rag.retrieval import retrieve as rag_retrieve
 
-    tier = creator.get("tier", "micro")
+        tier = req.tier or creator.get("tier", "micro")
+        deal = req.deal_type or creator.get("deal_type", "")
+        niche = creator.get("niche", "")
+        rag_query = (
+            f"outreach tone {tier} creator {niche} {deal} banned phrases guidelines"
+        )
+        rag_sources = rag_retrieve(rag_query, top_k=3)
+    except Exception:
+        rag_sources = []
+
+    tier = req.tier or creator.get("tier", "micro")
     deal = req.deal_type or creator.get("deal_type", "")
     niche = creator.get("niche", "")
-    rag_query = f"outreach tone {tier} creator {niche} {deal} banned phrases guidelines"
-    rag_sources = rag_retrieve(rag_query, top_k=3)
 
     try:
         oh = _load_skill("skill-03-outreach-drafting", "outreach_helpers.py")
@@ -285,19 +318,50 @@ def generate_outreach(creator_id: str, req: OutreachRequest):
         if req.deal_type:
             ctx["suggested_deal_type"] = req.deal_type
 
-        draft = ask(oh.build_outreach_prompt(ctx, tone_override=req.tone), model="api-llama-4-scout")
-        return {"draft": draft, "creator": ctx, "rag_sources": rag_sources}
-    except Exception:
-        first = creator["name"].split()[0]
-        draft = (
-            f"Hi {first},\n\n"
-            f"I came across your channel and loved how authentically you share your "
-            f"{niche.lower()} journey with your community.\n\n"
-            f"We'd love to send you some pieces from our latest collection to try out — "
-            f"no obligations, just a gift from us to you.\n\n"
-            f"Would you be open to a quick chat?\n\nBest,\nGymshark Partnerships"
+        draft = ask(
+            oh.build_outreach_prompt(ctx, tone_override=req.tone),
+            model="api-llama-4-scout",
         )
-        return {"draft": draft, "creator": creator, "rag_sources": rag_sources}
+        return {
+            "draft": draft,
+            "word_count": len(draft.split()),
+            "tier": tier,
+            "label": "AI Draft",
+            "type": deal or "gift_seeding",
+            "llm_generated": True,
+            "creator": ctx,
+            "rag_sources": rag_sources,
+        }
+    except Exception:
+        draft = _fallback_outreach_draft(creator, tone=req.tone, deal_type=deal)
+        return {
+            "draft": draft,
+            "word_count": len(draft.split()),
+            "tier": tier,
+            "label": "Fallback Draft",
+            "type": deal or "gift_seeding",
+            "llm_generated": False,
+            "creator": creator,
+            "rag_sources": rag_sources,
+        }
+
+
+@app.post("/api/creators/{creator_id}/outreach")
+def generate_outreach(creator_id: str, req: OutreachRequest):
+    return _generate_outreach_payload(creator_id, req)
+
+
+@app.post("/api/creators/{creator_id}/draft")
+def generate_draft(creator_id: str, req: OutreachRequest):
+    payload = _generate_outreach_payload(creator_id, req)
+    return {
+        "draft": payload["draft"],
+        "word_count": payload["word_count"],
+        "tier": payload["tier"],
+        "label": payload["label"],
+        "type": payload["type"],
+        "llm_generated": payload["llm_generated"],
+    }
 
 
 # ── send outreach (persist to outreach_responses.csv) ────────────────────────
@@ -461,13 +525,21 @@ def resolve_handle(creator_id: str):
         from googleapiclient.discovery import build
 
         youtube = build("youtube", "v3", developerKey=api_key)
-        resp = youtube.search().list(q=name, part="snippet", type="channel", maxResults=5).execute()
+        resp = (
+            youtube.search()
+            .list(q=name, part="snippet", type="channel", maxResults=5)
+            .execute()
+        )
         items = resp.get("items", [])
         if not items:
             return {"resolved": False, "message": "No channels found"}
 
         channel_ids = [i["snippet"]["channelId"] for i in items]
-        ch_resp = youtube.channels().list(id=",".join(channel_ids), part="snippet,statistics").execute()
+        ch_resp = (
+            youtube.channels()
+            .list(id=",".join(channel_ids), part="snippet,statistics")
+            .execute()
+        )
 
         candidates = []
         for ch in ch_resp.get("items", []):
@@ -477,25 +549,43 @@ def resolve_handle(creator_id: str):
                     "channel_id": ch["id"],
                     "title": snip.get("title", ""),
                     "handle": snip.get("customUrl", ""),
-                    "subscribers": int(ch.get("statistics", {}).get("subscriberCount", 0)),
-                    "thumbnail": snip.get("thumbnails", {}).get("default", {}).get("url", ""),
+                    "subscribers": int(
+                        ch.get("statistics", {}).get("subscriberCount", 0)
+                    ),
+                    "thumbnail": snip.get("thumbnails", {})
+                    .get("default", {})
+                    .get("url", ""),
                 }
             )
 
         name_lower = name.lower().replace(" ", "")
         best = sorted(
             candidates,
-            key=lambda c: (name_lower not in c["title"].lower().replace(" ", ""), -c["subscribers"]),
+            key=lambda c: (
+                name_lower not in c["title"].lower().replace(" ", ""),
+                -c["subscribers"],
+            ),
         )[0]
 
         if best["handle"]:
             csv_path = DATA_DIR / "creators.csv"
             content = csv_path.read_text(encoding="utf-8")
             old = creator["handle"]
-            new = best["handle"] if best["handle"].startswith("@") else f"@{best['handle']}"
-            csv_path.write_text(content.replace(f",{old},", f",{new},"), encoding="utf-8")
+            new = (
+                best["handle"]
+                if best["handle"].startswith("@")
+                else f"@{best['handle']}"
+            )
+            csv_path.write_text(
+                content.replace(f",{old},", f",{new},"), encoding="utf-8"
+            )
 
-        return {"resolved": True, "candidates": candidates, "best": best, "old_handle": creator["handle"]}
+        return {
+            "resolved": True,
+            "candidates": candidates,
+            "best": best,
+            "old_handle": creator["handle"],
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -530,24 +620,38 @@ def get_creator_videos(creator_id: str):
 
         search_resp = (
             youtube.search()
-            .list(channelId=channel_id, part="snippet", order="date", type="video", maxResults=6)
+            .list(
+                channelId=channel_id,
+                part="snippet",
+                order="date",
+                type="video",
+                maxResults=6,
+            )
             .execute()
         )
         video_ids = [i["id"]["videoId"] for i in search_resp.get("items", [])]
-        snippets = {i["id"]["videoId"]: i["snippet"] for i in search_resp.get("items", [])}
+        snippets = {
+            i["id"]["videoId"]: i["snippet"] for i in search_resp.get("items", [])
+        }
 
         if not video_ids:
             return {"videos": [], "channel_id": channel_id}
 
-        stats_resp = youtube.videos().list(part="statistics,contentDetails", id=",".join(video_ids)).execute()
+        stats_resp = (
+            youtube.videos()
+            .list(part="statistics,contentDetails", id=",".join(video_ids))
+            .execute()
+        )
         videos = []
         for item in stats_resp.get("items", []):
             vid = item["id"]
             snip = snippets.get(vid, {})
             stats = item.get("statistics", {})
-            thumb = (snip.get("thumbnails", {}).get("medium") or snip.get("thumbnails", {}).get("default") or {}).get(
-                "url", ""
-            )
+            thumb = (
+                snip.get("thumbnails", {}).get("medium")
+                or snip.get("thumbnails", {}).get("default")
+                or {}
+            ).get("url", "")
             videos.append(
                 {
                     "video_id": vid,
@@ -595,7 +699,9 @@ def get_analytics():
         tier = c.get("tier", "unknown")
         deal = c.get("deal_type", "unknown")
 
-        bt = by_tier.setdefault(tier, {"revenue": 0, "budget": 0, "count": 0, "roi_sum": 0})
+        bt = by_tier.setdefault(
+            tier, {"revenue": 0, "budget": 0, "count": 0, "roi_sum": 0}
+        )
         bt["revenue"] += rev
         bt["budget"] += budget
         bt["count"] += 1
@@ -646,36 +752,54 @@ def get_analytics():
                 "revenue": round(sc["revenue"], 0),
                 "budget": round(sc["budget"], 0),
                 "avg_roi_x": round(sc["roi_sum"] / n, 2) if n else 0,
-                "conversion_rate": round(sc["redemptions"] / sc["clicks"], 3) if sc["clicks"] > 0 else None,
+                "conversion_rate": round(sc["redemptions"] / sc["clicks"], 3)
+                if sc["clicks"] > 0
+                else None,
                 "campaigns": n,
                 "renewal": "Yes",
             }
         )
     creator_summary.sort(key=lambda x: x["avg_roi_x"], reverse=True)
 
+    overall_roi = round(total_revenue / total_budget, 2) if total_budget else 0
+    tier_breakdown = [
+        {
+            "tier": t,
+            "roi_fmt": f"{round(v['roi_sum'] / v['count'], 2):.2f}x",
+            "revenue_fmt": f"£{round(v['revenue'], 0):,.0f}",
+            "campaigns": v["count"],
+        }
+        for t, v in by_tier.items()
+    ]
+    top_performers = []
+    for item in creator_summary[:10]:
+        conv = item.get("conversion_rate")
+        top_performers.append(
+            {
+                "name": item["name"],
+                "niche": item["niche"] or "General Fitness",
+                "tier": item["tier"],
+                "deal_type": item["deal_type"],
+                "roi": item["avg_roi_x"],
+                "roi_fmt": f"{item['avg_roi_x']:.2f}x",
+                "revenue_fmt": f"£{item['revenue']:,.0f}",
+                "conv_fmt": f"{conv * 100:.0f}%"
+                if isinstance(conv, (int, float)) and conv is not None
+                else "—",
+                "renewal": "Yes" if item.get("renewal") == "Yes" else "No",
+            }
+        )
+
     return {
         "summary": {
-            "total_revenue": round(total_revenue, 0),
-            "total_budget": round(total_budget, 0),
-            "overall_roi_x": round(total_revenue / total_budget, 2) if total_budget else 0,
-            "total_reach": int(total_reach),
-            "campaign_count": len(campaigns),
-            "partner_count": len(seen),
+            "total_revenue": f"£{round(total_revenue, 0):,.0f}",
+            "overall_roi": f"{overall_roi:.2f}x",
+            "total_reach": f"{int(total_reach):,}",
+            "active_partners": len(seen),
+            "total_campaigns": len(campaigns),
         },
-        "by_tier": [
-            {
-                "tier": t,
-                "avg_roi": round(v["roi_sum"] / v["count"], 2),
-                "revenue": round(v["revenue"], 0),
-                "count": v["count"],
-            }
-            for t, v in by_tier.items()
-        ],
-        "by_deal": [
-            {"deal_type": d, "revenue": round(v["revenue"], 0), "budget": round(v["budget"], 0), "count": v["count"]}
-            for d, v in by_deal.items()
-        ],
-        "creators": creator_summary,
+        "top_performers": top_performers,
+        "tier_breakdown": tier_breakdown,
     }
 
 
@@ -685,7 +809,9 @@ def get_analytics():
 @app.get("/api/kpis")
 def get_kpis():
     try:
-        eligible, ineligible = scoring.shortlist_creators(str(DATA_DIR / "creators.csv"))
+        eligible, ineligible = scoring.shortlist_creators(
+            str(DATA_DIR / "creators.csv")
+        )
     except Exception:
         eligible, ineligible = [], []
     campaigns = _load_campaigns()
@@ -805,7 +931,12 @@ def _parse_brief_txt(content: str) -> dict:
 @app.get("/api/product-briefs")
 def get_product_briefs():
     if not BRIEFS_DIR.exists():
-        return {"briefs": [], "product_lines": [], "cohorts": [], "summary": {"total": 0}}
+        return {
+            "briefs": [],
+            "product_lines": [],
+            "cohorts": [],
+            "summary": {"total": 0},
+        }
 
     creators_by_name: dict[str, dict] = {}
     try:
@@ -839,7 +970,13 @@ def get_product_briefs():
     for b in briefs:
         line = b.get("product_line", "OTHER")
         pl = product_lines.setdefault(
-            line, {"id": line, "desc": b.get("product_line_desc", ""), "items": b.get("items", []), "creator_count": 0}
+            line,
+            {
+                "id": line,
+                "desc": b.get("product_line_desc", ""),
+                "items": b.get("items", []),
+                "creator_count": 0,
+            },
         )
         pl["creator_count"] += 1
 
@@ -851,7 +988,9 @@ def get_product_briefs():
         co["reach"] += b.get("subscribers", 0)
 
     total_reach = sum(b.get("subscribers", 0) for b in briefs)
-    affiliate_count = sum(1 for b in briefs if b.get("deal_type", "").upper() == "AFFILIATE")
+    affiliate_count = sum(
+        1 for b in briefs if b.get("deal_type", "").upper() == "AFFILIATE"
+    )
 
     return {
         "briefs": briefs,

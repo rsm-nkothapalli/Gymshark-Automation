@@ -67,6 +67,48 @@ const KPI_CARDS = [
   { label: 'Active Partners',  unit: '',              key: 'active_partners' as const, sub: 'total_campaigns' as const },
 ]
 
+const normalizeAnalyticsPayload = (payload: any): AnalyticsData => {
+  const summary = payload?.summary ?? {}
+  const topPerformers = Array.isArray(payload?.top_performers)
+    ? payload.top_performers
+    : Array.isArray(payload?.creators)
+      ? payload.creators.map((creator: any) => ({
+          name: creator.name,
+          niche: creator.niche || 'General Fitness',
+          tier: creator.tier || 'micro',
+          deal_type: creator.deal_type || 'gift_seeding',
+          roi: Number(creator.avg_roi_x ?? creator.roi ?? 0),
+          roi_fmt: creator.roi_fmt || `${Number(creator.avg_roi_x ?? creator.roi ?? 0).toFixed(2)}x`,
+          revenue_fmt: creator.revenue_fmt || `£${Number(creator.revenue ?? 0).toLocaleString()}`,
+          conv_fmt: creator.conv_fmt || '—',
+          renewal: creator.renewal || 'Yes',
+        }))
+      : []
+
+  const tierBreakdown = Array.isArray(payload?.tier_breakdown)
+    ? payload.tier_breakdown
+    : Array.isArray(payload?.by_tier)
+      ? payload.by_tier.map((tier: any) => ({
+          tier: tier.tier,
+          roi_fmt: tier.roi_fmt || `${Number(tier.avg_roi ?? 0).toFixed(2)}x`,
+          revenue_fmt: tier.revenue_fmt || `£${Number(tier.revenue ?? 0).toLocaleString()}`,
+          campaigns: Number(tier.count ?? tier.campaigns ?? 0),
+        }))
+      : []
+
+  return {
+    summary: {
+      total_revenue: String(summary.total_revenue ?? summary.total_revenue_gbp ?? '£0'),
+      overall_roi: String(summary.overall_roi ?? summary.overall_roi_x ?? '0x'),
+      total_reach: String(summary.total_reach ?? '0'),
+      active_partners: Number(summary.active_partners ?? summary.partner_count ?? 0),
+      total_campaigns: Number(summary.total_campaigns ?? summary.campaign_count ?? 0),
+    },
+    top_performers: topPerformers,
+    tier_breakdown: tierBreakdown,
+  }
+}
+
 export default function AnalyticsPage() {
   const [data, setData]     = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -74,7 +116,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetch('/api/analytics')
       .then((r) => r.json())
-      .then((d: AnalyticsData) => { setData(d); setLoading(false) })
+      .then((d: AnalyticsData) => { setData(normalizeAnalyticsPayload(d)); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 

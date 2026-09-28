@@ -81,6 +81,69 @@ const STATUS_LABELS: Record<string, { lbl: string; cls: string }> = {
   no_reply:  { lbl: 'No Reply',         cls: 'bg-t4/30 text-t3 border-t4/25' },
 }
 
+const normalizeCreator = (raw: any): Creator => {
+  const gfsValue = Number(raw.gfs ?? raw.gymshark_brand_fit ?? 0)
+  const followCount = Number(raw.subscribers ?? raw.sub ?? 0)
+  const followers = String(raw.followers ?? raw.subscribers_fmt ?? `${followCount}`)
+  const engagement = Number(raw.engagement ?? raw.engagement_score ?? 0)
+  const auth = Number(raw.auth ?? raw.authenticity_score ?? 0)
+  const sentiment = Number(raw.sentiment ?? raw.sentiment_positive_pct ?? 0)
+  const niche = String(raw.niche || 'General Fitness')
+  const handle = String(raw.handle || raw.youtube_handle || '@creator')
+  const name = String(raw.name || 'Creator')
+
+  return {
+    id: String(raw.id ?? raw.creator_id ?? handle),
+    handle,
+    name,
+    sub: String(raw.sub ?? followCount),
+    niche,
+    tagline: String(raw.tagline ?? `${niche} creator`),
+    gfs: String(raw.gfs ?? gfsValue.toFixed(1)),
+    gfs_tier: gfsValue >= 7 ? 'GREEN' : 'AMBER',
+    status: String(raw.status ?? (raw.outreach_recommended ? 'ready' : 'review')) as Creator['status'],
+    img:
+      raw.img ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
+    followers,
+    engagement: String(raw.engagement ?? `${engagement.toFixed(1)}%`),
+    auth: String(raw.auth ?? auth.toFixed(1)),
+    sentiment: String(raw.sentiment ?? `${sentiment.toFixed(0)}%`),
+    breakdown: {
+      authenticity: Number(raw.breakdown?.authenticity ?? raw.authenticity_score ?? auth ?? 0),
+      niche: Number(raw.breakdown?.niche ?? raw.niche_score ?? 0),
+      engagement: Number(raw.breakdown?.engagement ?? raw.engagement_score ?? engagement ?? 0),
+      sentiment: Number(raw.breakdown?.sentiment ?? raw.sentiment_positive_pct ?? sentiment ?? 0),
+      visual: Number(raw.breakdown?.visual ?? raw.authenticity_score ?? auth ?? 0),
+      quality: Number(raw.breakdown?.quality ?? raw.niche_score ?? 0),
+      cadence: Number(raw.breakdown?.cadence ?? raw.engagement_score ?? engagement ?? 0),
+    },
+    projections: {
+      reach: String(raw.projections?.reach ?? `${followers}`),
+      conv: String(raw.projections?.conv ?? '—'),
+      roi: String(raw.projections?.roi ?? '—'),
+    },
+    socials: [
+      {
+        kind: 'youtube',
+        label: handle,
+        count: followers,
+        er: raw.engagement_score ? `${Number(raw.engagement_score).toFixed(1)}%` : undefined,
+      },
+    ],
+    responded: Boolean(raw.responded),
+    response_date: raw.response_date,
+    response_notes: raw.response_notes,
+    outreach_sent_date: raw.outreach_sent_date,
+    account_manager: raw.account_manager,
+    outreach_channel: raw.outreach_channel,
+    follow_up_date: raw.follow_up_date,
+    proposed_next_step: raw.proposed_next_step,
+    priority: raw.priority,
+    signals: raw.signals || [`#${niche.toUpperCase().replace(/\s+/g, '_')}`, `GFS ${gfsValue.toFixed(1)}`],
+  }
+}
+
 const SocialIcon = ({ kind }: { kind: 'youtube' | 'instagram' | 'tiktok' }) => {
   switch (kind) {
     case 'youtube':   return <YouTubeIcon className="w-3.5 h-3.5" />
@@ -128,8 +191,9 @@ export default function OutreachPage() {
 
     fetch('/api/creators')
       .then((r) => r.json())
-      .then((data: Creator[]) => {
-        const visible = filter.size > 0 ? data.filter((c) => filter.has(c.id)) : data
+      .then((data: any[]) => {
+        const normalized = data.map(normalizeCreator)
+        const visible = filter.size > 0 ? normalized.filter((c) => filter.has(c.id)) : normalized
         setCreators(visible)
         if (visible.length) {
           setActiveCreator(visible[0])
@@ -211,9 +275,10 @@ export default function OutreachPage() {
                 onClick={() => {
                   localStorage.removeItem('gymshark-nexus-selected-creators')
                   setDiscoveryFilter(new Set())
-                  fetch('/api/creators').then(r => r.json()).then((data: Creator[]) => {
-                    setCreators(data)
-                    if (data.length) { setActiveCreator(data[0]); fetchDraft(data[0].id, activeTier) }
+                  fetch('/api/creators').then(r => r.json()).then((data: any[]) => {
+                    const normalized = data.map(normalizeCreator)
+                    setCreators(normalized)
+                    if (normalized.length) { setActiveCreator(normalized[0]); fetchDraft(normalized[0].id, activeTier) }
                   })
                 }}
                 className="font-mono text-[11px] text-t3 hover:text-t1 tracking-[0.1em] uppercase transition-colors"
